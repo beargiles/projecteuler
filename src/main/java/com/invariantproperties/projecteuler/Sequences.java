@@ -32,7 +32,12 @@ import com.invariantproperties.projecteuler.recurrence.PerrinSequence;
 import java.math.BigInteger;
 import java.util.ListIterator;
 
-
+/**
+ * Utility class that provides a convenience implementation of several standard
+ * sequences.
+ * 
+ * @author Bear Giles <bgiles@coyotesong.com>
+ */
 public class Sequences {
     public static final Sequence<BigInteger> FACTORIAL = new FactorialNumber();
     public static final Sequence<BigInteger> FIBONACCI = new FibonacciNumber();
@@ -50,16 +55,15 @@ public class Sequences {
     /**
      * Get unmodifiable ListIterator.
      */
-    public static final <T> ListIterator<T> unmodifiableListIterator(
-        ListIterator<T> iterator) {
+    public static final <T> ListIterator<T> unmodifiableListIterator(ListIterator<T> iterator) {
         return new UnmodifableListIterator<T>(iterator);
     }
 
     /**
      * Implementation of unmodifiable ListIterator.
-     *
+     * 
      * @author bgiles
-     *
+     * 
      * @param <T>
      */
     private static class UnmodifableListIterator<T> implements ListIterator<T> {

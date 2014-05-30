@@ -25,44 +25,52 @@ package com.invariantproperties.projecteuler;
 import java.util.Iterator;
 import java.util.ListIterator;
 
-
+/**
+ * Abstract implementation of
+ * {@link com.invariantproperties.projecteuler.Sequence}.
+ * 
+ * @author Bear Giles <bgiles@coyotesong.com>
+ * 
+ * @param <E>
+ */
 public abstract class AbstractSequence<E> implements Sequence<E> {
 
-	/**
-	 * Get OEIS Sequence
-	 */
-	public abstract String getOeisSequenceNumber();
+    /**
+     * Get OEIS Sequence
+     */
+    public abstract String getOeisSequenceNumber();
 
-	/**
-	 * Are elements unique?
-	 */
-	public boolean isUnique() {
-	    return true;
-	}
+    /**
+     * Are elements unique?
+     */
+    public boolean isUnique() {
+        return true;
+    }
 
-	/**
-	 * Get specified number.
-	 * @param n
-	 * @return
-	 */
-	public abstract E get(int n);
+    /**
+     * Get specified number.
+     * 
+     * @param n
+     * @return
+     */
+    public abstract E get(int n);
 
-	/**
-	 * @see com.coyotesong.projecteuler.recurrence.Sequence#iterator()
-	 */
-	public abstract Iterator<E> iterator();
+    /**
+     * @see com.coyotesong.projecteuler.recurrence.Sequence#iterator()
+     */
+    public abstract Iterator<E> iterator();
 
-	/**
-	 * @see com.coyotesong.projecteuler.recurrence.Sequence#listIterator()
-	 */
-	public abstract ListIterator<E> listIterator();
+    /**
+     * @see com.coyotesong.projecteuler.recurrence.Sequence#listIterator()
+     */
+    public abstract ListIterator<E> listIterator();
 
-	/**
-	 * @see com.coyotesong.projecteuler.recurrence.Sequence#listIterator(int)
-	 */
-	public abstract ListIterator<E> listIterator(int startIndex);
+    /**
+     * @see com.coyotesong.projecteuler.recurrence.Sequence#listIterator(int)
+     */
+    public abstract ListIterator<E> listIterator(int startIndex);
 
-	public AbstractSequence() {
-		super();
-	}
+    public AbstractSequence() {
+        super();
+    }
 }

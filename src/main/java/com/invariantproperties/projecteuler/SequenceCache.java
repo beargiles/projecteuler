@@ -26,27 +26,24 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.NoSuchElementException;
 
-
 /**
  * Cache interface. Three types of caches are supported:
- *
- * <b>IN-MEMORY CACHE.</b> This cache is held entirely in
- * memory. It may use a LRU algorithm to keep the amount of memory
- * required in check.
- *
- * <b>EXISTING DATABASE-BACKED CACHE.</b> This cache is
- * backed by a database (but may use an in-memory cache as well
- * for performance). The database is already initialized. The database
- * may be read-only, or it may allow additional values to be added over
- * time.
- *
- * <b>NEW DATABASE-BACKED CACHE.</b> This is another cache
- * backed by a database but it must be initialized before use. This could
- * be the first use of a new permanent database, or could be a JVM-based
- * database that only exists for the duration of the application.
- *
- * @author bgiles
- *
+ * 
+ * <b>IN-MEMORY CACHE.</b> This cache is held entirely in memory. It may use a
+ * LRU algorithm to keep the amount of memory required in check.
+ * 
+ * <b>EXISTING DATABASE-BACKED CACHE.</b> This cache is backed by a database
+ * (but may use an in-memory cache as well for performance). The database is
+ * already initialized. The database may be read-only, or it may allow
+ * additional values to be added over time.
+ * 
+ * <b>NEW DATABASE-BACKED CACHE.</b> This is another cache backed by a database
+ * but it must be initialized before use. This could be the first use of a new
+ * permanent database, or could be a JVM-based database that only exists for the
+ * duration of the application.
+ * 
+ * @author Bear Giles <bgiles@coyotesong.com>
+ * 
  * @param <E>
  */
 public interface SequenceCache<E> {
@@ -67,13 +64,17 @@ public interface SequenceCache<E> {
 
     /**
      * Initialize elements
-     * @throws IllegalStateException cache has already been initialized.
+     * 
+     * @throws IllegalStateException
+     *             cache has already been initialized.
      */
     boolean initialize(final List<E> elements);
 
     /**
      * Initialize elements
-     * @throws IllegalStateException cache has already been initialized.
+     * 
+     * @throws IllegalStateException
+     *             cache has already been initialized.
      */
     boolean initialize(final Iterator<E> iterator, long count);
 
@@ -81,11 +82,11 @@ public interface SequenceCache<E> {
      * Does cache contain this value?
      */
 
-    //boolean contains(Object o);
+    // boolean contains(Object o);
 
     /**
      * Get value from cache.
-     *
+     * 
      * @param n
      * @return
      */
@@ -93,12 +94,12 @@ public interface SequenceCache<E> {
 
     /**
      * Put value into the cache.
-     *
+     * 
      * @throws UnsupportedOperationException
      *             if this is readonly cache.
      */
     void put(final int n, final E value);
-    
+
     /**
      * Rese cache to newly-initialized state.
      */

@@ -24,23 +24,45 @@ package com.invariantproperties.projecteuler;
 
 import java.util.ListIterator;
 
-
 /**
- * Semi-infinite sequence. That is, a sequence with elements at
- * 0, 1, 2,... infinity, or at least as close to it as you can get with the
- * available resources.
- *
- * @author bgiles
- *
+ * Semi-infinite sequence. That is, a sequence with elements at 0, 1, 2,...
+ * infinity, or at least as close to it as you can get with the available
+ * resources.
+ * 
+ * We often want to use a Sequence instead of a Collection since the standard
+ * implementations of the latter require precalculation during construction.
+ * This probably means we either wasted effort computing values we don't need or
+ * we'll come up short and ask for values that don't exist. A Sequence is
+ * usually implemented as a "just-in-time" iterator so it only computes what we
+ * need (eliminating the first problem) and computes as much as we need
+ * (eliminating the second problem).
+ * 
+ * Sometimes we want a Collection anyway. In this case we can use a
+ * {@link com.invariantproperties.projecteuler.SequenceList} - it is a
+ * "just-in-time" (JIT) collection that only computes values as needed.
+ * Implementations can cache values so the amortized cost of a lookup can be
+ * very low. This is a good reason to use a singleton implementation of the
+ * common sequences - see {@link com.invariantproperties.projecteuler.Sequences}
+ * .
+ * 
+ * Finally the JIT property of a Sequence allows some surprising things to be
+ * provided. E.g., prime numbers. A prime Sequence can use an internal sieve
+ * that is transparently regenerated as needed.
+ * 
+ * Important: the parameter does not need to be a Number.
+ * 
+ * @author Bear Giles <bgiles@coyotesong.com>
+ * 
  * @param <E>
  */
 public interface Sequence<E> extends Iterable<E> {
     /**
      * Get the OEIS sequence number, if defined, for this sequence.
+     * 
      * @return
      */
     String getOeisSequenceNumber();
-    
+
     /**
      * Are the elements of this sequence unique?
      */
@@ -48,6 +70,7 @@ public interface Sequence<E> extends Iterable<E> {
 
     /**
      * Get the specified element of the sequence.
+     * 
      * @param n
      * @return element
      */
@@ -55,19 +78,19 @@ public interface Sequence<E> extends Iterable<E> {
 
     /**
      * Get the semi-infinite list iterator. That is, a bidirectional iterator.
-     *
-     * @throws UnsupportedOperationException if this sequence does not
-     * support a bidirectional iterator.
-     *
+     * 
+     * @throws UnsupportedOperationException
+     *             if this sequence does not support a bidirectional iterator.
+     * 
      * @return
      */
     ListIterator<E> listIterator();
-    
+
     /**
      * Get semi-infinite list iterator starting at given offset.
      */
     ListIterator<E> listIterator(int startIndex);
-    
+
     /**
      * Get a finite sublist.
      */

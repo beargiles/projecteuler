@@ -29,11 +29,10 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
-
 /**
  * Utility class to cache sequence values.
- *
- * @author bgiles
+ * 
+ * @author Bear Giles <bgiles@coyotesong.com>
  */
 public class InMemorySequenceCache<E> implements SequenceCache<E> {
     private final List<E> staticCache = new ArrayList<E>();
@@ -50,20 +49,20 @@ public class InMemorySequenceCache<E> implements SequenceCache<E> {
 
     /**
      * Constructor specifying size of permanent and dynamic cache.
-     *
+     * 
      * @param generator
-     * @param size dynamic cache size
+     * @param size
+     *            dynamic cache size
      */
     public InMemorySequenceCache(final int size) {
         dynamicCache = Collections.synchronizedMap(new LinkedHashMap<Integer, E>() {
-                    private static final long serialVersionUID = 1L;
+            private static final long serialVersionUID = 1L;
 
-                    @Override
-                    protected boolean removeEldestEntry(
-                        Map.Entry<Integer, E> entry) {
-                        return dynamicCache.size() > size;
-                    }
-                });
+            @Override
+            protected boolean removeEldestEntry(Map.Entry<Integer, E> entry) {
+                return dynamicCache.size() > size;
+            }
+        });
     }
 
     /**
@@ -106,11 +105,11 @@ public class InMemorySequenceCache<E> implements SequenceCache<E> {
     }
 
     /**
-     * @see com.coyotesong.projecteuler.recurrence.SequenceCache#initialize(java.util.Iterator, long)
+     * @see com.coyotesong.projecteuler.recurrence.SequenceCache#initialize(java.util.Iterator,
+     *      long)
      */
     @Override
-    public synchronized boolean initialize(final Iterator<E> iterator,
-        long count) {
+    public synchronized boolean initialize(final Iterator<E> iterator, long count) {
         if (isInitialized) {
             throw new IllegalStateException("Cache is already initialized");
         }
@@ -125,8 +124,8 @@ public class InMemorySequenceCache<E> implements SequenceCache<E> {
     }
 
     /**
-      * @see com.coyotesong.projecteuler.recurrence.SequenceCache#get(int)
-      */
+     * @see com.coyotesong.projecteuler.recurrence.SequenceCache#get(int)
+     */
     @Override
     public synchronized E get(final int n) {
         if (n < staticCache.size()) {
@@ -142,17 +141,18 @@ public class InMemorySequenceCache<E> implements SequenceCache<E> {
     }
 
     /**
-     * @see com.coyotesong.projecteuler.recurrence.SequenceCache#put(int, Object)
+     * @see com.coyotesong.projecteuler.recurrence.SequenceCache#put(int,
+     *      Object)
      */
     @Override
     public synchronized void put(final int n, final E value) {
         dynamicCache.put(n, value);
     }
-    
+
     /**
      * @see com.coyotesong.projecteuler.recurrence.SequenceCache#reset()
      */
     public void reset() {
-    	dynamicCache.clear();
+        dynamicCache.clear();
     }
 }

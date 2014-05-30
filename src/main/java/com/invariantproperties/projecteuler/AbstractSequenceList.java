@@ -22,13 +22,17 @@
  */
 package com.invariantproperties.projecteuler;
 
-
 import java.util.Collection;
 
-
-public abstract class AbstractSequenceList<E> extends AbstractSequence<E>
-    implements SequenceList<E> {
-
+/**
+ * Abstract implementation of
+ * {@link com.invariantproperties.projecteuler.SequenceList}.
+ * 
+ * @author Bear Giles <bgiles@coyotesong.com>
+ * 
+ * @param <E>
+ */
+public abstract class AbstractSequenceList<E> extends AbstractSequence<E> implements SequenceList<E> {
 
     @Override
     public final boolean add(E e) {
@@ -41,12 +45,12 @@ public abstract class AbstractSequenceList<E> extends AbstractSequence<E>
     }
 
     @Override
-    public final boolean addAll(Collection<?extends E> c) {
+    public final boolean addAll(Collection<? extends E> c) {
         throw new UnsupportedOperationException();
     }
 
     @Override
-    public final boolean addAll(int index, Collection<?extends E> c) {
+    public final boolean addAll(int index, Collection<? extends E> c) {
         throw new UnsupportedOperationException();
     }
 

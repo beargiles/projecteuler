@@ -28,12 +28,11 @@ import java.util.Collection;
 import java.util.List;
 import java.util.ListIterator;
 
-
 /**
  * SequenceList of numeric values.
- *
- * @author bgiles
- *
+ * 
+ * @author Bear Giles <bgiles@coyotesong.com>
+ * 
  * @param <E>
  */
 public class NumericSequenceList<E extends Number> extends AbstractSequenceList<E> {
@@ -41,8 +40,7 @@ public class NumericSequenceList<E extends Number> extends AbstractSequenceList<
     public final String oeisSequenceNumber;
     public boolean isUnique;
 
-    public NumericSequenceList(List<E> elements, String oeisSequenceNumber,
-        boolean isUnique) {
+    public NumericSequenceList(List<E> elements, String oeisSequenceNumber, boolean isUnique) {
         this.elements = elements;
         this.oeisSequenceNumber = oeisSequenceNumber;
         this.isUnique = isUnique;
@@ -99,7 +97,7 @@ public class NumericSequenceList<E extends Number> extends AbstractSequenceList<
     }
 
     /**
-     * Create an array of the specified type.  We only support arrays of
+     * Create an array of the specified type. We only support arrays of
      * Integers, Longs and BigIntegers.
      */
     @Override
@@ -138,8 +136,7 @@ public class NumericSequenceList<E extends Number> extends AbstractSequenceList<
             return (T[]) z;
         }
 
-        throw new IllegalArgumentException("unsupported array type: " +
-            a.getClass().getComponentType().getName());
+        throw new IllegalArgumentException("unsupported array type: " + a.getClass().getComponentType().getName());
     }
 
     @Override
@@ -156,21 +153,20 @@ public class NumericSequenceList<E extends Number> extends AbstractSequenceList<
     public ListIterator<E> listIterator(int index) {
         return elements.listIterator(index);
     }
-    
-	/**
-	 * Get sublist.
-	 */
-	public NumericSequenceList<E> subList(int startIndex, int lastIndex) {
-	    if (startIndex < 0) {
-	        throw new IllegalArgumentException("fromIndex must be non-negative");
-	    }
-	
-	    if (!(startIndex < lastIndex)) {
-	        throw new IllegalArgumentException(
-	            "fromIndex must be smaller than endIndex");
-	    }
-	
-	    return new NumericSequenceList<E>(elements.subList(startIndex, lastIndex), this.getOeisSequenceNumber(),
-	        this.isUnique());
-	}
+
+    /**
+     * Get sublist.
+     */
+    public NumericSequenceList<E> subList(int startIndex, int lastIndex) {
+        if (startIndex < 0) {
+            throw new IllegalArgumentException("fromIndex must be non-negative");
+        }
+
+        if (!(startIndex < lastIndex)) {
+            throw new IllegalArgumentException("fromIndex must be smaller than endIndex");
+        }
+
+        return new NumericSequenceList<E>(elements.subList(startIndex, lastIndex), this.getOeisSequenceNumber(),
+                this.isUnique());
+    }
 }

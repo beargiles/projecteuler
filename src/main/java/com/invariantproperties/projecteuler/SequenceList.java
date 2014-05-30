@@ -24,17 +24,15 @@ package com.invariantproperties.projecteuler;
 
 import java.util.List;
 
-
 /**
- * Sequence that also provides unmodifiable List semantics, specifically
- * the abiility to quickly determine if an arbitrary value is a member of
- * the sequence or not.
- *
- * Important: these lists should not be blindly used is copy constructors!
- * Some lists have modest sizes but others will be on the order of
- * Integer.MAX_SIZE.
- *
- * @author bgiles
+ * Sequence that also provides unmodifiable List semantics, specifically the
+ * abiility to quickly determine if an arbitrary value is a member of the
+ * sequence or not.
+ * 
+ * Important: these lists should not be blindly used is copy constructors! Some
+ * lists have modest sizes but others will be on the order of Integer.MAX_SIZE.
+ * 
+ * @author Bear Giles <bgiles@coyotesong.com>
  */
 public interface SequenceList<E> extends Sequence<E>, List<E> {
 }

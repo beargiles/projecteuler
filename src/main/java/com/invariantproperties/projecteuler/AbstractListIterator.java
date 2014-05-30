@@ -25,11 +25,13 @@ package com.invariantproperties.projecteuler;
 import java.util.ListIterator;
 import java.util.NoSuchElementException;
 
-
 /**
- * Abstract implementation of semi-infinite read-only Listiterator clas.
- *
- * @author bgiles
+ * Abstract implementation of
+ * {@link com.invariantproperties.projecteuler.ListIterator}.
+ * 
+ * @author Bear Giles <bgiles@coyotesong.com>
+ * 
+ * @param <E>
  */
 public abstract class AbstractListIterator<T> implements ListIterator<T> {
     protected int idx = 0;

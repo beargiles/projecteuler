@@ -26,11 +26,11 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.NoSuchElementException;
 
-
 /**
- * Non-caching cache.
- *
- * @author bgiles
+ * Non-caching "cache". This is a convenient method if you need a SequenceCache
+ * for some reason but don't need to/want to actually cache the values.
+ * 
+ * @author Bear Giles <bgiles@coyotesong.com>
  */
 public class NullSequenceCache<E> implements SequenceCache<E> {
     /**
@@ -58,7 +58,9 @@ public class NullSequenceCache<E> implements SequenceCache<E> {
 
     /**
      * Initialize elements
-     * @throws IllegalStateException cache has already been initialized.
+     * 
+     * @throws IllegalStateException
+     *             cache has already been initialized.
      */
     @Override
     public boolean initialize(final List<E> elements) {
@@ -67,7 +69,9 @@ public class NullSequenceCache<E> implements SequenceCache<E> {
 
     /**
      * Initialize elements
-     * @throws IllegalStateException cache has already been initialized.
+     * 
+     * @throws IllegalStateException
+     *             cache has already been initialized.
      */
     @Override
     public boolean initialize(final Iterator<E> iterator, long count) {
@@ -76,7 +80,7 @@ public class NullSequenceCache<E> implements SequenceCache<E> {
 
     /**
      * Get value from cache.
-     *
+     * 
      * @param n
      * @return
      */
@@ -87,19 +91,19 @@ public class NullSequenceCache<E> implements SequenceCache<E> {
 
     /**
      * Put value into the cache.
-     *
+     * 
      * @throws UnsupportedOperationException
      *             if this is readonly cache.
      */
     @Override
     public void put(final int n, final E value) {
     }
-    
+
     /**
      * 
      */
     @Override
     public void reset() {
-    	
+
     }
 }
