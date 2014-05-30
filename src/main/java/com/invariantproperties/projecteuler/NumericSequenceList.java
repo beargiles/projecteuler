@@ -29,7 +29,9 @@ import java.util.List;
 import java.util.ListIterator;
 
 /**
- * SequenceList of numeric values.
+ * SequenceList of numeric values. Integral sequences can often be found in the
+ * <a href="https://oeis.org/">On-Line Encyclopedia of Integer Sequences</a> and
+ * if known the OEIS sequence number is also provided.
  * 
  * @author Bear Giles <bgiles@coyotesong.com>
  * 
