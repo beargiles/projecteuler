@@ -1,0 +1,7 @@
+5) primes
+7) rainbow table cache
+8) database-backed cache
+
+use addition for the figurate iterators instead of calculating from scratch
+
+get proper size for figurate numbers
