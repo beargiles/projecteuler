@@ -22,25 +22,52 @@
  */
 package com.invariantproperties.projecteuler.prime;
 
-import java.util.HashMap;
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.List;
+import java.util.ListIterator;
 import java.util.Map;
+import java.util.NoSuchElementException;
 import java.util.TreeMap;
+import java.util.concurrent.locks.ReadWriteLock;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
+
+import com.invariantproperties.projecteuler.AbstractListIterator;
 
 /*
  * Singleton Implementation of modified Sieve Of Eratosthenes. This sieve
- * keeps track of the largest prime factor, not just primality.
+ * keeps track of the largest prime factor, not just primality. The internal
+ * cache is resized as necessary so this class may consume a large amount of
+ * memory, roughly 4*n where n is the largest number checked for primality.
+ * 
+ * If you only want primality you should use SieveOfAtkin.SIEVE.
  *
  * @author bgiles
  */
-public enum SieveOfEratosthenes {SIEVE;
+public enum SieveOfEratosthenes implements Iterable<Integer> {
+    SIEVE;
+    private final ReadWriteLock lock = new ReentrantReadWriteLock();
+    private final List<Integer> primecache = new ArrayList<Integer>();
 
-    private int sieveSize;
     private int[] sieve;
 
     private SieveOfEratosthenes() {
-        sieveSize = 15485865;
-        //sieveSize = 1000;
-        sieve = initialize(sieveSize);
+        // initialize with first million primes - 15485865
+        // initialize with first 10k primes - 104729
+        sieve = initialize(104729);
+
+        // initialize cache with first 10k primes for quick access
+        try {
+            lock.readLock().lock();
+            for (int index = 0, n = 2; index < 10000; n++) {
+                if (sieve[n] == 0) {
+                    primecache.add(n);
+                    index++;
+                }
+            }
+        } finally {
+            lock.readLock().unlock();
+        }
     }
 
     /**
@@ -63,31 +90,83 @@ public enum SieveOfEratosthenes {SIEVE;
         return sieve;
     }
 
-    public synchronized boolean isPrime(int n) {
-        if (!((0 <= n) && (n < sieveSize))) {
-            throw new IllegalArgumentException("value must be between 0 and " +
-                sieveSize);
+    /**
+     * Initialize the sieve. This method is called when it is necessary to grow
+     * the sieve.
+     */
+    private int[] reinitialize(int n) {
+        int[] sieve = new int[0];
+
+        try {
+            lock.writeLock().lock();
+            // allocate 50% more than required to minimize thrashing.
+            initialize((3 * n) / 2);
+        } finally {
+            lock.writeLock().unlock();
         }
 
-        return sieve[n] == 0;
+        return sieve;
     }
 
-    private Map<Integer,Integer> factorize(int n) {
-        if (!((0 <= n) && (n < sieveSize))) {
-            throw new IllegalArgumentException("value must be between 0 and " +
-                sieveSize);
+    /**
+     * Is this a prime number?
+     * 
+     * @param n
+     * @return true if prime
+     * @throws IllegalArgumentException
+     *             if negative number
+     */
+    public boolean isPrime(int n) {
+        if (n < 0) {
+            throw new IllegalArgumentException("value must be non-zero");
         }
 
-        Map<Integer, Integer> factors = new TreeMap<Integer, Integer>();
+        boolean isPrime = false;
+        try {
+            lock.readLock().lock();
+            if (n > sieve.length) {
+                sieve = reinitialize(n);
+            }
+            isPrime = sieve[n] == 0;
+        } finally {
+            lock.readLock().unlock();
+        }
 
-        for (int factor = sieve[n]; factor > 0; factor = sieve[n]) {
-            if (factors.containsKey(factor)) {
-                factors.put(factor, 1 + factors.get(factor));
-            } else {
-                factors.put(factor, 1);
+        return isPrime;
+    }
+
+    /**
+     * Factorize a number
+     * 
+     * @param n
+     * @return map of prime divisors (key) and exponent(value)
+     * @throws IllegalArgumentException
+     *             if negative number
+     */
+    private Map<Integer, Integer> factorize(int n) {
+        if (n < 0) {
+            throw new IllegalArgumentException("value must be non-zero");
+        }
+
+        final Map<Integer, Integer> factors = new TreeMap<Integer, Integer>();
+
+        try {
+            lock.readLock().lock();
+            if (n > sieve.length) {
+                sieve = reinitialize(n);
             }
 
-            n /= factor;
+            for (int factor = sieve[n]; factor > 0; factor = sieve[n]) {
+                if (factors.containsKey(factor)) {
+                    factors.put(factor, 1 + factors.get(factor));
+                } else {
+                    factors.put(factor, 1);
+                }
+
+                n /= factor;
+            }
+        } finally {
+            lock.readLock().unlock();
         }
 
         // must add final term
@@ -100,7 +179,68 @@ public enum SieveOfEratosthenes {SIEVE;
         return factors;
     }
 
-    private String toString(Map<Integer,Integer> factors) {
+    /**
+     * @see java.util.List#get(int)
+     * @param n
+     * @return nth prime (starting with 2)
+     * @throws IllegalArgumentException
+     *             if negative number
+     */
+    public Integer get(int n) {
+        if (n < 0) {
+            throw new IllegalArgumentException("value must be non-zero");
+        }
+
+        // easy way
+        if (n < primecache.size()) {
+            return primecache.get(n);
+        }
+
+        // hard way
+        Iterator<Integer> iter = iterator();
+        for (int i = 0; i < n; i++) {
+            iter.next();
+        }
+
+        return iter.next();
+    }
+
+    /**
+     * @see java.util.List#indexOf(java.lang.Object)
+     */
+    public int indexOf(Integer n) {
+        if (!isPrime(n)) {
+            return -1;
+        }
+
+        // easy way
+        if (n < primecache.get(primecache.size() - 1)) {
+            return primecache.indexOf(n);
+        }
+
+        // hard way
+        int index = 0;
+        for (int i : sieve) {
+            if (i == n) {
+                return index;
+            }
+            index++;
+        }
+        return -1;
+    }
+
+    /**
+     * Convert a factorization to a human-friendly string. The format is a
+     * comma-delimited list where each element is either a prime number p (as
+     * "p"), or the nth power of a prime number as "p^n".
+     * 
+     * @param factors
+     *            factorization
+     * @return string representation of factorization.
+     * @throws IllegalArgumentException
+     *             if negative number
+     */
+    public String toString(Map<Integer, Integer> factors) {
         StringBuilder sb = new StringBuilder(20);
 
         for (Map.Entry<Integer, Integer> entry : factors.entrySet()) {
@@ -116,6 +256,67 @@ public enum SieveOfEratosthenes {SIEVE;
         }
 
         return sb.substring(2);
+    }
+
+    /**
+     * @see java.lang.Iterable#iterator()
+     */
+    public Iterator<Integer> iterator() {
+        return new EratosthenesListIterator();
+    }
+
+    public ListIterator<Integer> listIterator() {
+        return new EratosthenesListIterator();
+    }
+
+    /**
+     * List iterator.
+     * 
+     * @author Bear Giles <bgiles@coyotesong.com>
+     */
+    class EratosthenesListIterator extends AbstractListIterator<Integer> {
+        int offset = 2;
+
+        /**
+         * @see com.invariantproperties.projecteuler.AbstractListIterator#getNext()
+         */
+        @Override
+        protected Integer getNext() {
+            try {
+                lock.readLock().lock();
+                while (true) {
+                    offset++;
+                    if (isPrime(offset)) {
+                        return offset;
+                    }
+                }
+            } finally {
+                lock.readLock().unlock();
+            }
+
+            // we'll always find a value since we dynamically resize the sieve.
+        }
+
+        /**
+         * @see com.invariantproperties.projecteuler.AbstractListIterator#getPrevious()
+         */
+        @Override
+        protected Integer getPrevious() {
+            try {
+                lock.readLock().lock();
+                while (offset > 0) {
+                    offset--;
+                    if (isPrime(offset)) {
+                        return offset;
+                    }
+                }
+            } finally {
+                lock.readLock().unlock();
+            }
+
+            // we only get here if something went horribly wrong
+            throw new NoSuchElementException();
+        }
     }
 
     public static void main(String[] args) {

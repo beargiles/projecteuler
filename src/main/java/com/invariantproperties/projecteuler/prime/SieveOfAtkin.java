@@ -22,63 +22,67 @@
  */
 package com.invariantproperties.projecteuler.prime;
 
+import java.util.ArrayList;
+import java.util.BitSet;
+import java.util.Iterator;
+import java.util.List;
+import java.util.ListIterator;
+import java.util.NoSuchElementException;
+import java.util.concurrent.locks.ReadWriteLock;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
+
+import com.invariantproperties.projecteuler.AbstractListIterator;
 
 /*
- * Singleton Implementation of Sieve Of Atkin. It is used to determine primality.
+ * Singleton Implementation of Sieve Of Atkin. It is used to determine primality. 
+ * The internal cache is resized as necessary so this class may consume a large
+ * amount of memory, roughly n/5 where n is the largest number checked for primality.
+ * 
+ * If you want the largest prime divisor you should use SieveOfEratostheses.SIEVE.
  *
- * @author bgiles
+ * @author Bear Giles <bgiles@coyotesong.com>
  */
-public enum SieveOfAtkin {SIEVE;
+public enum SieveOfAtkin implements Iterable<Integer> {
+    SIEVE;
+    private final ReadWriteLock lock = new ReentrantReadWriteLock();
+    private final List<Integer> primecache = new ArrayList<Integer>();
 
-    private int sieveSize;
-    private byte[] sieve;
-    private final byte[] masks;
+    private final BitSet sieve = new BitSet();
 
     private SieveOfAtkin() {
-        masks = new byte[8];
+        // initialize with first million primes - 15485865
+        // initialize with first 10k primes - 104729
+        initialize(104729);
 
-        for (int i = 0; i < 8; i++) {
-            masks[i] = (byte) (1 << i);
-        }
-
-        sieveSize = 15485865;
-        sieve = initialize(sieveSize);
-    }
-
-    /**
-     * Return an instance with at least as many elements as requested.
-     *
-     * @param sieveSize
-     * @return
-     */
-
-    /*
-    public static SieveOfAtkin getInstance(int sieveSize) {
-            // resize sieve if we require more elements than in current sieve.
-            // this is synchronized to avoid race conditions. It's unlikely anyway
-            // since we set the sieve before the sieveSize but the optimizer may
-            // change the order of execution.
-            if (sieveSize > INSTANCE.sieveSize) {
-                    SieveOfAtkin s = new SieveOfAtkin(sieveSize);
-                    synchronized(INSTANCE) {
-                            INSTANCE.sieve = s.sieve;
-                            INSTANCE.sieveSize = s.sieveSize;
-                    }
+        // initialize cache with first 10k primes for quick access
+        try {
+            lock.readLock().lock();
+            for (int index = 0, n = 2; index < 10000; n++) {
+                if (sieve.get(n)) {
+                    primecache.add(n);
+                    index++;
+                }
             }
-
-            return INSTANCE;
+        } finally {
+            lock.readLock().unlock();
+        }
     }
-    */
 
     /**
      * Initialize the sieve.
      */
-    private byte[] initialize(int sieveSize) {
-        byte[] sieve = new byte[(sieveSize + 7) / 8];
+    private void initialize(int sieveSize) {
 
-        // data is initialized to zero
-        long sqrt = Math.round(Math.ceil(Math.sqrt(sieveSize)));
+        // actual sieve size
+        int sqrt = (int) Math.round(Math.ceil(Math.sqrt(sieveSize)));
+        int bitSetSize = sqrt * sqrt;
 
+        // data is initialized to false
+        sieve.set(0, bitSetSize + 1, false);
+
+        // implementation note: the published algorithm uses a
+        // map containing bits corresponding to even numbers. This
+        // implementation excludes those bits.
         for (int x = 0; x < sqrt; x++) {
             for (int y = 0; y < sqrt; y++) {
                 int x2 = x * x;
@@ -87,61 +91,213 @@ public enum SieveOfAtkin {SIEVE;
                 int n = (4 * x2) + y2;
 
                 if ((n < sieveSize) && (((n % 12) == 1) || ((n % 12) == 5))) {
-                    //sieve = sieve.flipBit(n);
-                    sieve[n / 8] ^= masks[n % 8];
+                    sieve.flip(n / 2);
                 }
 
                 n -= x2;
 
                 if ((n < sieveSize) && ((n % 12) == 7)) {
-                    //sieve = sieve.flipBit(n);
-                    sieve[n / 8] ^= masks[n % 8];
+                    sieve.flip(n / 2);
                 }
 
                 n -= (2 * y2);
 
                 if ((x > y) && (n < sieveSize) && ((n % 12) == 11)) {
-                    //sieve = sieve.flipBit(n);
-                    sieve[n / 8] ^= masks[n % 8];
+                    sieve.flip(n / 2);
                 }
             }
         }
 
         for (int x = 5; x < sqrt; x += 2) {
-            if ((sieve[x / 8] & masks[x % 8]) != 0) {
+            if (sieve.get(x)) {
                 int step = (int) (x * x);
 
                 for (int y = step; y < sieveSize; y += step) {
-                    //sieve = sieve.clearBit(n);
-                    sieve[y / 8] &= ~masks[y % 8];
+                    sieve.clear(y / 2);
                 }
             }
         }
 
         // final little bits since this sieve doesn't work for n < 5.
-        sieve[0] &= ~masks[1];
-        sieve[0] |= masks[2];
-        sieve[0] |= masks[3];
-
-        int size = 2; // 2, 3
-
-        for (int n = 5; n < sieveSize; n++) {
-            if ((sieve[n / 8] & masks[n % 8]) != 0) {
-                size++;
-            }
-        }
-
-        return sieve;
+        // sieve.set(2, true);
+        sieve.set(3 / 2, true);
     }
 
-    public synchronized boolean isPrime(int n) {
-        if (!((0 <= n) && (n < sieveSize))) {
-            throw new IllegalArgumentException("value must be between 0 and " +
-                sieveSize);
+    /**
+     * Reinitialize the sieve. This method is called when it is necessary to
+     * grow the bitset.
+     */
+    private void reinitialize(int n) {
+        try {
+            lock.writeLock().lock();
+            // allocate 50% more than required to minimize thrashing.
+            initialize((3 * n) / 2);
+        } finally {
+            lock.writeLock().unlock();
+        }
+    }
+
+    /**
+     * Is this a prime number?
+     * 
+     * @param n
+     * @return true if prime
+     * @throws IllegalArgumentException
+     *             if negative number
+     */
+    public boolean isPrime(int n) {
+        if (n < 0) {
+            throw new IllegalArgumentException("value must be non-zero");
         }
 
-        return (sieve[n / 8] & masks[n % 8]) != 0;
+        if (n < 2) {
+            return false;
+        }
 
-        // return cache.testBit(n);
+        if (n == 2) {
+            return true;
+        }
+
+        // is it necessary to resize
+        if (n > sieve.size()) {
+            reinitialize(n);
+        }
+
+        boolean value = false;
+        try {
+            lock.readLock().lock();
+            value = sieve.get(n / 2);
+        } finally {
+            lock.readLock().unlock();
+        }
+
+        return value;
+    }
+
+    /**
+     * @see java.util.List#get(int)
+     * @param n
+     * @return nth prime (starting with 2)
+     * @throws IllegalArgumentException
+     *             if negative number
+     */
+    public Integer get(int n) {
+        if (n < 0) {
+            throw new IllegalArgumentException("value must be non-zero");
+        }
+
+        // easy way
+        if (n < primecache.size()) {
+            return primecache.get(n);
+        }
+
+        // hard way
+        Iterator<Integer> iter = iterator();
+        for (int i = 0; i < n; i++) {
+            iter.next();
+        }
+
+        return iter.next();
+    }
+
+    /**
+     * @see java.util.List#indexOf(java.lang.Object)
+     * 
+     * @param n
+     *            potentially prime number
+     * @return index of prime (starting with 2), or -1 if non-prime.
+     * @throws IllegalArgumentException
+     *             if negative number
+     */
+    public int indexOf(Integer n) {
+        if (n < 0) {
+            throw new IllegalArgumentException("value must be non-zero");
+        }
+
+        if (!isPrime(n)) {
+            return -1;
+        }
+
+        // easy way
+        if (n < primecache.get(primecache.size() - 1)) {
+            return primecache.indexOf(n);
+        }
+
+        // hard way
+        int index = 0;
+        for (int i : SIEVE) {
+            if (i == n) {
+                return index;
+            }
+            index++;
+        }
+        return -1;
+    }
+
+    /**
+     * @see java.lang.Iterable#iterator()
+     */
+    public Iterator<Integer> iterator() {
+        return new AtkinListIterator();
+    }
+
+    public ListIterator<Integer> listIterator() {
+        return new AtkinListIterator();
+    }
+
+    /**
+     * List iterator.
+     * 
+     * @author Bear Giles <bgiles@coyotesong.com>
+     */
+    class AtkinListIterator extends AbstractListIterator<Integer> {
+        int offset;
+
+        /**
+         * @see com.invariantproperties.projecteuler.AbstractListIterator#getNext()
+         */
+        @Override
+        protected Integer getNext() {
+            try {
+                lock.readLock().lock();
+                while (true) {
+                    offset++;
+
+                    // do we need to force an expansion?
+                    if (offset >= sieve.size()) {
+                        reinitialize(offset);
+                    }
+
+                    if (isPrime(offset)) {
+                        return offset;
+                    }
+                }
+            } finally {
+                lock.readLock().unlock();
+            }
+
+            // we'll always find a value since we dynamically resize the sieve.
+        }
+
+        /**
+         * @see com.invariantproperties.projecteuler.AbstractListIterator#getPrevious()
+         */
+        @Override
+        protected Integer getPrevious() {
+            try {
+                lock.readLock().lock();
+                while (offset > 0) {
+                    offset--;
+                    if (isPrime(offset)) {
+                        return offset;
+                    }
+                }
+            } finally {
+                lock.readLock().unlock();
+            }
+
+            // we only get here if something went horribly wrong
+            throw new NoSuchElementException();
+        }
     }
 }
