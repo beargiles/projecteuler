@@ -49,7 +49,7 @@ public enum SieveOfEratosthenes implements Iterable<Integer> {
     private final ReadWriteLock lock = new ReentrantReadWriteLock();
     private final List<Integer> primecache = new ArrayList<Integer>();
 
-    private int[] sieve;
+    private volatile int[] sieve;
 
     private SieveOfEratosthenes() {
         // initialize with first million primes - 15485865
@@ -59,10 +59,10 @@ public enum SieveOfEratosthenes implements Iterable<Integer> {
         // initialize cache with first 10k primes for quick access
         try {
             lock.readLock().lock();
-            for (int index = 0, n = 2; index < 10000; n++) {
-                if (sieve[n] == 0) {
+            primecache.add(2);
+            for (int n = 3; primecache.size() < 10000; n += 2) {
+                if (isPrime(n)) {
                     primecache.add(n);
-                    index++;
                 }
             }
         } finally {
@@ -74,14 +74,17 @@ public enum SieveOfEratosthenes implements Iterable<Integer> {
      * Initialize the sieve.
      */
     private int[] initialize(int sieveSize) {
-        int[] sieve = new int[sieveSize];
+        assert sieveSize > 0;
+
+        long sqrt = Math.round(Math.ceil(Math.sqrt(sieveSize)));
+        int actualSieveSize = (int) (sqrt * sqrt);
 
         // data is initialized to zero
-        long sqrt = Math.round(Math.ceil(Math.sqrt(sieveSize)));
+        int[] sieve = new int[actualSieveSize];
 
         for (int x = 2; x < sqrt; x++) {
             if (sieve[x] == 0) {
-                for (int y = 2 * x; y < sieveSize; y += x) {
+                for (int y = 2 * x; y < actualSieveSize; y += x) {
                     sieve[y] = x;
                 }
             }
@@ -94,18 +97,16 @@ public enum SieveOfEratosthenes implements Iterable<Integer> {
      * Initialize the sieve. This method is called when it is necessary to grow
      * the sieve.
      */
-    private int[] reinitialize(int n) {
-        int[] sieve = new int[0];
+    private void reinitialize(int n) {
+        assert n > 0;
 
         try {
             lock.writeLock().lock();
             // allocate 50% more than required to minimize thrashing.
-            initialize((3 * n) / 2);
+            sieve = initialize((3 * n) / 2);
         } finally {
             lock.writeLock().unlock();
         }
-
-        return sieve;
     }
 
     /**
@@ -117,16 +118,20 @@ public enum SieveOfEratosthenes implements Iterable<Integer> {
      *             if negative number
      */
     public boolean isPrime(int n) {
+        assert n >= 0;
+
         if (n < 0) {
             throw new IllegalArgumentException("value must be non-zero");
+        }
+
+        if (n >= sieve.length) {
+            // may have overlapping reinitializations but that's okay.
+            reinitialize(n);
         }
 
         boolean isPrime = false;
         try {
             lock.readLock().lock();
-            if (n > sieve.length) {
-                sieve = reinitialize(n);
-            }
             isPrime = sieve[n] == 0;
         } finally {
             lock.readLock().unlock();
@@ -144,6 +149,8 @@ public enum SieveOfEratosthenes implements Iterable<Integer> {
      *             if negative number
      */
     private Map<Integer, Integer> factorize(int n) {
+        assert n >= 0;
+
         if (n < 0) {
             throw new IllegalArgumentException("value must be non-zero");
         }
@@ -152,9 +159,8 @@ public enum SieveOfEratosthenes implements Iterable<Integer> {
 
         try {
             lock.readLock().lock();
-            if (n > sieve.length) {
-                sieve = reinitialize(n);
-            }
+            // handle reinitialization in just one place.
+            isPrime(n);
 
             for (int factor = sieve[n]; factor > 0; factor = sieve[n]) {
                 if (factors.containsKey(factor)) {
@@ -187,6 +193,8 @@ public enum SieveOfEratosthenes implements Iterable<Integer> {
      *             if negative number
      */
     public Integer get(int n) {
+        assert n >= 0;
+
         if (n < 0) {
             throw new IllegalArgumentException("value must be non-zero");
         }
@@ -282,16 +290,11 @@ public enum SieveOfEratosthenes implements Iterable<Integer> {
          */
         @Override
         protected Integer getNext() {
-            try {
-                lock.readLock().lock();
-                while (true) {
-                    offset++;
-                    if (isPrime(offset)) {
-                        return offset;
-                    }
+            while (true) {
+                offset++;
+                if (isPrime(offset)) {
+                    return offset;
                 }
-            } finally {
-                lock.readLock().unlock();
             }
 
             // we'll always find a value since we dynamically resize the sieve.
@@ -302,16 +305,11 @@ public enum SieveOfEratosthenes implements Iterable<Integer> {
          */
         @Override
         protected Integer getPrevious() {
-            try {
-                lock.readLock().lock();
-                while (offset > 0) {
-                    offset--;
-                    if (isPrime(offset)) {
-                        return offset;
-                    }
+            while (offset > 0) {
+                offset--;
+                if (isPrime(offset)) {
+                    return offset;
                 }
-            } finally {
-                lock.readLock().unlock();
             }
 
             // we only get here if something went horribly wrong

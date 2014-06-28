@@ -23,7 +23,6 @@
 package com.invariantproperties.projecteuler.prime;
 
 import java.util.ArrayList;
-import java.util.BitSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.ListIterator;
@@ -40,87 +39,116 @@ import com.invariantproperties.projecteuler.AbstractListIterator;
  * 
  * If you want the largest prime divisor you should use SieveOfEratostheses.SIEVE.
  *
+ * Implementation note: for larger sieves it may be necessary to use explicit
+ * byte arrays instead of a BitSet.
+ *
  * @author Bear Giles <bgiles@coyotesong.com>
  */
 public enum SieveOfAtkin implements Iterable<Integer> {
     SIEVE;
+    private final byte MASK[] = new byte[8];
     private final ReadWriteLock lock = new ReentrantReadWriteLock();
     private final List<Integer> primecache = new ArrayList<Integer>();
 
-    private final BitSet sieve = new BitSet();
+    private byte[] sieve;
 
     private SieveOfAtkin() {
+        for (int i = 0; i < 8; i++) {
+            MASK[i] = (byte) (1 << i);
+        }
+
         // initialize with first million primes - 15485865
         // initialize with first 10k primes - 104729
-        initialize(104729);
+        sieve = initialize(104729);
 
         // initialize cache with first 10k primes for quick access
-        try {
-            lock.readLock().lock();
-            for (int index = 0, n = 2; index < 10000; n++) {
-                if (sieve.get(n)) {
-                    primecache.add(n);
-                    index++;
-                }
+        primecache.add(2);
+        for (int n = 3; primecache.size() < 10000; n += 2) {
+            if (this.isPrime(n)) {
+                primecache.add(n);
             }
-        } finally {
-            lock.readLock().unlock();
         }
+    }
+
+    private void flip(int n) {
+        assert n >= 0;
+
+        int offset = n / 8;
+        sieve[offset] = (byte) (sieve[offset] ^ MASK[n % 8]);
+    }
+
+    private void set(int n) {
+        assert n >= 0;
+
+        int offset = n / 8;
+        sieve[offset] = (byte) (sieve[offset] | MASK[n % 8]);
+    }
+
+    private void clear(int n) {
+        assert n >= 0;
+
+        int offset = n / 8;
+        sieve[offset] = (byte) (sieve[offset] & ~MASK[n % 8]);
+    }
+
+    private boolean getBit(int n) {
+        assert n >= 0;
+
+        int offset = n / 8;
+        return (sieve[offset] & MASK[n % 8]) != 0;
     }
 
     /**
      * Initialize the sieve.
      */
-    private void initialize(int sieveSize) {
-
+    private byte[] initialize(int sieveSize) {
         // actual sieve size
         int sqrt = (int) Math.round(Math.ceil(Math.sqrt(sieveSize)));
-        int bitSetSize = sqrt * sqrt;
+        int actualSieveSize = 8 * ((sqrt * sqrt + 7) / 8);
 
-        // data is initialized to false
-        sieve.set(0, bitSetSize + 1, false);
+        sieve = new byte[actualSieveSize / 8];
 
-        // implementation note: the published algorithm uses a
-        // map containing bits corresponding to even numbers. This
-        // implementation excludes those bits.
-        for (int x = 0; x < sqrt; x++) {
-            for (int y = 0; y < sqrt; y++) {
+        for (int x = 1; x < sqrt; x++) {
+            for (int y = 1; y < sqrt + 1; y++) {
                 int x2 = x * x;
                 int y2 = y * y;
 
-                int n = (4 * x2) + y2;
+                int n = 4 * x2 + y2;
 
-                if ((n < sieveSize) && (((n % 12) == 1) || ((n % 12) == 5))) {
-                    sieve.flip(n / 2);
+                if ((n < actualSieveSize) && (((n % 12) == 1) || ((n % 12) == 5))) {
+                    flip(n);
                 }
 
                 n -= x2;
 
-                if ((n < sieveSize) && ((n % 12) == 7)) {
-                    sieve.flip(n / 2);
+                if ((n < actualSieveSize) && ((n % 12) == 7)) {
+                    flip(n);
                 }
 
-                n -= (2 * y2);
+                n -= 2 * y2;
 
-                if ((x > y) && (n < sieveSize) && ((n % 12) == 11)) {
-                    sieve.flip(n / 2);
+                if ((x > y) && (n < actualSieveSize) && ((n % 12) == 11)) {
+                    flip(n);
                 }
             }
         }
 
-        for (int x = 5; x < sqrt; x += 2) {
-            if (sieve.get(x)) {
+        for (int x = 5; x < sqrt + 1; x += 2) {
+            if (getBit(x)) {
                 int step = (int) (x * x);
 
-                for (int y = step; y < sieveSize; y += step) {
-                    sieve.clear(y / 2);
+                for (int y = step; y < actualSieveSize; y += step) {
+                    clear(y);
                 }
             }
         }
 
         // final little bits since this sieve doesn't work for n < 5.
-        // sieve.set(2, true);
-        sieve.set(3 / 2, true);
+        set(2);
+        set(3);
+        set(5);
+
+        return sieve;
     }
 
     /**
@@ -128,10 +156,12 @@ public enum SieveOfAtkin implements Iterable<Integer> {
      * grow the bitset.
      */
     private void reinitialize(int n) {
+        assert n > 0;
+
+        lock.writeLock().lock();
         try {
-            lock.writeLock().lock();
             // allocate 50% more than required to minimize thrashing.
-            initialize((3 * n) / 2);
+            sieve = initialize((3 * n) / 2);
         } finally {
             lock.writeLock().unlock();
         }
@@ -150,23 +180,27 @@ public enum SieveOfAtkin implements Iterable<Integer> {
             throw new IllegalArgumentException("value must be non-zero");
         }
 
-        if (n < 2) {
+        if (n == 1) {
             return false;
         }
 
-        if (n == 2) {
+        if (n == 2 || n == 3) {
             return true;
         }
 
+        if (n % 2 == 0) {
+            return false;
+        }
+
         // is it necessary to resize
-        if (n > sieve.size()) {
+        if (8 * sieve.length < n) {
             reinitialize(n);
         }
 
         boolean value = false;
         try {
             lock.readLock().lock();
-            value = sieve.get(n / 2);
+            value = getBit(n);
         } finally {
             lock.readLock().unlock();
         }
@@ -258,22 +292,12 @@ public enum SieveOfAtkin implements Iterable<Integer> {
          */
         @Override
         protected Integer getNext() {
-            try {
-                lock.readLock().lock();
-                while (true) {
-                    offset++;
+            while (true) {
+                offset++;
 
-                    // do we need to force an expansion?
-                    if (offset >= sieve.size()) {
-                        reinitialize(offset);
-                    }
-
-                    if (isPrime(offset)) {
-                        return offset;
-                    }
+                if (isPrime(offset)) {
+                    return offset;
                 }
-            } finally {
-                lock.readLock().unlock();
             }
 
             // we'll always find a value since we dynamically resize the sieve.
@@ -284,16 +308,11 @@ public enum SieveOfAtkin implements Iterable<Integer> {
          */
         @Override
         protected Integer getPrevious() {
-            try {
-                lock.readLock().lock();
-                while (offset > 0) {
-                    offset--;
-                    if (isPrime(offset)) {
-                        return offset;
-                    }
+            while (offset > 0) {
+                offset--;
+                if (isPrime(offset)) {
+                    return offset;
                 }
-            } finally {
-                lock.readLock().unlock();
             }
 
             // we only get here if something went horribly wrong

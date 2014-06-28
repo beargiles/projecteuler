@@ -22,31 +22,170 @@
  */
 package com.invariantproperties.projecteuler.prime;
 
-import com.invariantproperties.projecteuler.Sequence;
-import com.invariantproperties.projecteuler.SequenceList;
+import java.util.Collection;
+import java.util.Iterator;
+import java.util.ListIterator;
 
+import com.invariantproperties.projecteuler.AbstractSequenceList;
+import com.invariantproperties.projecteuler.SequenceList;
 
 /**
  * The prime numbers.
- *
- * @author bgiles
+ * 
+ * @author Bear Giles <bgiles@coyotesong.com>
  */
 @com.invariantproperties.projecteuler.annotation.Sequence(oeis = "A000040")
-public class PrimeNumber {
-    private final SieveOfAtkin sieve = SieveOfAtkin.SIEVE;
+public class PrimeNumber extends AbstractSequenceList<Integer> {
+    private final static SieveOfAtkin sieve = SieveOfAtkin.SIEVE;
 
     /**
-     * Constructor that will produce a list of the first million primes.
+     * @see com.invariantproperties.projecteuler.AbstractSequence#getOeisSequenceNumber()
      */
-    public PrimeNumber() {
-        //this(15485865);  // 1 million primes
-    }
-
-    public String getOeisSequenceName() {
+    @Override
+    public String getOeisSequenceNumber() {
         return "A000040";
     }
 
+    @Override
     public boolean isUnique() {
         return true;
+    }
+
+    /**
+     * @see java.util.List#contains(java.lang.Object)
+     */
+    public boolean contains(Integer n) {
+        return sieve.isPrime(n);
+    }
+
+    /**
+     * @see java.util.List#contains(java.lang.Object)
+     */
+    @Override
+    public boolean contains(Object n) {
+        return (n instanceof Integer) ? sieve.isPrime((Integer) n) : false;
+    }
+
+    /**
+     * @see java.util.List#containsAll(java.util.Collection)
+     */
+    @Override
+    public boolean containsAll(Collection<? extends Object> c) {
+        boolean results = true;
+        for (Object n : c) {
+            results = results && sieve.isPrime((Integer) n);
+        }
+        return results;
+    }
+
+    /**
+     * @see com.invariantproperties.projecteuler.AbstractSequence#get(int)
+     */
+    @Override
+    public Integer get(int n) {
+        Iterator<Integer> iter = sieve.iterator();
+        for (int i = 0; i < n; i++) {
+            iter.next();
+        }
+        return iter.next();
+    }
+
+    /**
+     * @see java.util.List#indexOf(java.lang.Object)
+     */
+    public int indexOf(Integer n) {
+        return sieve.indexOf(n);
+    }
+
+    /**
+     * @see java.util.List#lastIndexOf(java.lang.Object)
+     */
+    @Override
+    public int indexOf(Object n) {
+        return (n instanceof Integer) ? sieve.indexOf((Integer) n) : -1;
+    }
+
+    /**
+     * @see java.util.List#lastIndexOf(java.lang.Object)
+     */
+    public int lastIndexOf(Integer n) {
+        return sieve.indexOf(n);
+    }
+
+    /**
+     * @see java.util.List#lastIndexOf(java.lang.Object)
+     */
+    public int lastIndexOf(Object n) {
+        return (n instanceof Integer) ? sieve.indexOf((Integer) n) : -1;
+    }
+
+    /**
+     * @see java.util.List#isEmpty()
+     */
+    public boolean isEmpty() {
+        return false;
+    }
+
+    /**
+     * @see java.util.List#size()
+     */
+    public int size() {
+        return Integer.MAX_VALUE;
+    }
+
+    /*
+     * (non-Javadoc)
+     * 
+     * @see java.util.List#toArray()
+     */
+    @Override
+    public Object[] toArray() {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
+    /*
+     * (non-Javadoc)
+     * 
+     * @see java.util.List#toArray(java.lang.Object[])
+     */
+    @Override
+    public <T> T[] toArray(T[] arg0) {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
+    /*
+     * @see com.invariantproperties.projecteuler.Sequence#subList(int, int)
+     */
+    @Override
+    public SequenceList<Integer> subList(int startIndex, int lastIndex) {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
+    /**
+     * @see com.invariantproperties.projecteuler.AbstractSequence#iterator()
+     */
+    @Override
+    public Iterator<Integer> iterator() {
+        return listIterator();
+    }
+
+    /**
+     * @see com.invariantproperties.projecteuler.AbstractSequence#listIterator()
+     */
+    @Override
+    public ListIterator<Integer> listIterator() {
+        return listIterator(0);
+    }
+
+    /**
+     * @see com.invariantproperties.projecteuler.AbstractSequence#listIterator(int)
+     */
+    @Override
+    public ListIterator<Integer> listIterator(int startIndex) {
+        // TODO Auto-generated method stub
+        return null;
     }
 }

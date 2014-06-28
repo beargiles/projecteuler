@@ -30,21 +30,27 @@ import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
 
-
+/**
+ * To add: - A006530 - Gpf(n) - greatest prime factor (a(1) = 1) - A007947 -
+ * rad(n) - largest squarefree number dividing n, radical of n - A003557 - n
+ * divided by radial (largest squarefree divisor of n, n >= 1 - A008472 -
+ * sopf(n) - sum of distinct prime factors of n
+ * 
+ * @author Bear Giles <bgiles@coyotesong.com>
+ * 
+ */
 public class SloanesUtil {
-    private static final int SIEVE_SIZE = 10000 + 1;
+    private static final int SIEVE_SIZE = 10000000 + 1;
     private static int[] greatestFactor;
-    private static final List<Integer> seeds = Arrays.asList(2, 3, 5, 7, 11,
-            13, 17, 19);
+    private static final List<Integer> seeds = Arrays.asList(2, 3, 5, 7, 11, 13, 17, 19);
     private static final LinkedHashMap<Integer, Map<Integer, Integer>> factorCache;
 
     static {
         factorCache = new LinkedHashMap<Integer, Map<Integer, Integer>>() {
-                    protected boolean removeEldestElement(
-                        Map.Entry<Integer, Integer> entry) {
-                        return factorCache.size() > 10;
-                    }
-                };
+            protected boolean removeEldestElement(Map.Entry<Integer, Integer> entry) {
+                return factorCache.size() > 10;
+            }
+        };
     }
 
     static {
@@ -85,10 +91,9 @@ public class SloanesUtil {
     /**
      * Factor a number.
      * <p>
-     * Implementation note: this method uses an internal cache
-     * so repeated calls with the same argument will usually not incur
-     * a significant cost.
-     *
+     * Implementation note: this method uses an internal cache so repeated calls
+     * with the same argument will usually not incur a significant cost.
+     * 
      * @param n
      * @return
      */
@@ -130,8 +135,7 @@ public class SloanesUtil {
             if (entry.getValue() == 1) {
                 sb.append(String.format(", %d", entry.getKey()));
             } else {
-                sb.append(String.format(", %d^%d", entry.getKey(),
-                        entry.getValue()));
+                sb.append(String.format(", %d^%d", entry.getKey(), entry.getValue()));
             }
         }
 
@@ -139,8 +143,8 @@ public class SloanesUtil {
     }
 
     /**
-     * Get number of prime factors. (&omega;)
-     *
+     * Get number of prime factors. (&omega;) (A001221)
+     * 
      * @param n
      * @return
      */
@@ -151,8 +155,8 @@ public class SloanesUtil {
     }
 
     /**
-     * Get total number of factors (&Omega;).
-     *
+     * Get total number of factors (&Omega;). (A001222)
+     * 
      * @param n
      * @return
      */
@@ -169,7 +173,7 @@ public class SloanesUtil {
 
     /**
      * Get totient value (&phi;, A0000??)
-     *
+     * 
      * @param n
      * @return
      */
@@ -181,8 +185,7 @@ public class SloanesUtil {
             if (entry.getValue() == 1) {
                 phi *= (entry.getKey() - 1);
             } else {
-                phi *= ((entry.getKey() - 1) * Math.round(Math.pow(
-                        entry.getKey(), entry.getValue() - 1)));
+                phi *= ((entry.getKey() - 1) * Math.round(Math.pow(entry.getKey(), entry.getValue() - 1)));
             }
         }
 
@@ -191,7 +194,7 @@ public class SloanesUtil {
 
     /**
      * Get number of divisors (&sigma;, A000010)
-     *
+     * 
      * @param n
      * @return
      */
@@ -204,8 +207,7 @@ public class SloanesUtil {
 
             long x = entry.getKey();
 
-            for (int exp = 1; exp <= entry.getValue();
-                    exp++, x *= entry.getKey()) {
+            for (int exp = 1; exp <= entry.getValue(); exp++, x *= entry.getKey()) {
                 sum += x;
             }
 
@@ -217,7 +219,7 @@ public class SloanesUtil {
 
     /**
      * Get restricted number of divisors(s(n), A001065)
-     *
+     * 
      * @param n
      * @return
      */
@@ -231,9 +233,8 @@ public class SloanesUtil {
         pw.println("  FROM STDIN");
 
         for (int n = 2; n < greatestFactor.length; n++) {
-            pw.printf("%d\t%d\t%d\t%d\t%d\t%d\t%d\t%s%n", n, greatestFactor[n],
-                getOmega(n), getNumberOfFactors(n), getTotient(n), getSigma(n),
-                getRestrictedNumberOfDivisors(n), listFactors(n));
+            pw.printf("%d\t%d\t%d\t%d\t%d\t%d\t%d\t%s%n", n, greatestFactor[n], getOmega(n), getNumberOfFactors(n),
+                    getTotient(n), getSigma(n), getRestrictedNumberOfDivisors(n), listFactors(n));
         }
 
         pw.println("\\.");
@@ -242,12 +243,9 @@ public class SloanesUtil {
 
     public static void main(String[] args) {
         /*
-        for (int i = 2; i < greatestFactor.length; i++) {
-                if (i == greatestFactor[i]) {
-                        System.out.println(i);
-                }
-        }
-        */
+         * for (int i = 2; i < greatestFactor.length; i++) { if (i ==
+         * greatestFactor[i]) { System.out.println(i); } }
+         */
         dump();
     }
 }
