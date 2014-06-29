@@ -284,7 +284,7 @@ public enum SieveOfAtkin implements Iterable<Integer> {
      * 
      * @author Bear Giles <bgiles@coyotesong.com>
      */
-    class AtkinListIterator extends AbstractListIterator<Integer> {
+    static class AtkinListIterator extends AbstractListIterator<Integer> {
         int offset;
 
         /**
@@ -295,7 +295,7 @@ public enum SieveOfAtkin implements Iterable<Integer> {
             while (true) {
                 offset++;
 
-                if (isPrime(offset)) {
+                if (SIEVE.isPrime(offset)) {
                     return offset;
                 }
             }
@@ -310,7 +310,7 @@ public enum SieveOfAtkin implements Iterable<Integer> {
         protected Integer getPrevious() {
             while (offset > 0) {
                 offset--;
-                if (isPrime(offset)) {
+                if (SIEVE.isPrime(offset)) {
                     return offset;
                 }
             }

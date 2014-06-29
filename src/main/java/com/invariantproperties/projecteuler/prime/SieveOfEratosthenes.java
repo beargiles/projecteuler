@@ -282,7 +282,7 @@ public enum SieveOfEratosthenes implements Iterable<Integer> {
      * 
      * @author Bear Giles <bgiles@coyotesong.com>
      */
-    class EratosthenesListIterator extends AbstractListIterator<Integer> {
+    static class EratosthenesListIterator extends AbstractListIterator<Integer> {
         int offset = 2;
 
         /**
@@ -292,7 +292,7 @@ public enum SieveOfEratosthenes implements Iterable<Integer> {
         protected Integer getNext() {
             while (true) {
                 offset++;
-                if (isPrime(offset)) {
+                if (SIEVE.isPrime(offset)) {
                     return offset;
                 }
             }
@@ -307,7 +307,7 @@ public enum SieveOfEratosthenes implements Iterable<Integer> {
         protected Integer getPrevious() {
             while (offset > 0) {
                 offset--;
-                if (isPrime(offset)) {
+                if (SIEVE.isPrime(offset)) {
                     return offset;
                 }
             }
